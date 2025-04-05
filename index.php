@@ -1,7 +1,7 @@
 <?php
 /*
-Plugin Name: Fahrschulbewertungen
-Description: Bewertungen welche von Fahrschülern erstellt werden können und vom Fahrlehrer mit einem Bild beantwortet werden.
+Plugin Name: Bewertungen
+Description: Ein Plugin zum Sammeln und Verwalten von Bewertungen mit der Möglichkeit, diese mit Bildern zu beantworten.
 Version: 1.0
 Requires at least: 5.2
 Requires PHP:      7.2
@@ -9,13 +9,13 @@ Author: Flonik
 Author URI: https://flonik.de
 License: GPL v2 or later 
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
-Text Domain: fahrschul_bewertungen
+Text Domain: bewertungen
 */
 
 // Create Table
 
 global $wpdb;
-$table_name = $wpdb->prefix . 'fahrschul_bewertungen';
+$table_name = $wpdb->prefix . 'bewertungen';
 $wpdb->query( "CREATE TABLE IF NOT EXISTS $table_name (
     id INT(11) NOT NULL AUTO_INCREMENT,
     vorname VARCHAR(50) NOT NULL,
@@ -30,7 +30,7 @@ $wpdb->query( "CREATE TABLE IF NOT EXISTS $table_name (
 
 function mein_formular_verarbeiten() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'fahrschul_bewertungen';
+    $table_name = $wpdb->prefix . 'bewertungen';
     if ( isset( $_POST['submit'] ) ) {
         $vorname   = $_POST['vorname'] ?? '';
         $key       = $_POST['key'] ?? '';
@@ -58,10 +58,10 @@ function mein_formular_verarbeiten() {
 }
 //add_action( 'init', 'mein_formular_verarbeiten' );
 
-function fahrschule_review_shortcode() {
+function bewertungen_review_shortcode() {
     ob_start();
     global $wpdb;
-    $table_name = $wpdb->prefix . 'fahrschul_bewertungen';
+    $table_name = $wpdb->prefix . 'bewertungen';
     $eintraege = $wpdb->get_results( "SELECT * FROM $table_name WHERE sichtbar = 1" );
     ?>
     <?php if ( $eintraege ) { ?>
@@ -69,7 +69,7 @@ function fahrschule_review_shortcode() {
             <?php foreach ( $eintraege as $eintrag ) { 
                 $antwort    = $eintrag->antwort_auf;
                 $bild       = $eintrag->bild_id;
-                $image_size = 'full'; // z.B. thumbnail, medium, large oder full
+                $image_size = 'full';
                 $image      = wp_get_attachment_image( $bild, $image_size );
                 ?>
                 <div class="fs-box">
@@ -77,8 +77,8 @@ function fahrschule_review_shortcode() {
                     <span class="fs-nachricht"><?php echo esc_html( $eintrag->nachricht ); ?></span>
                     <?php 
                     if ( ! empty( $antwort ) ) {
-                        echo '<div class="fs-fahrlehrer">';
-                        echo '<span class="fs-lehrername">Ghostcar</span>';
+                        echo '<div class="fs-antwort">';
+                        echo '<span class="fs-antwortname">Administrator</span>';
                         echo '<span class="fs-nachricht">' . esc_html( $antwort ) . '</span>';
                         echo '<div class="fs-bild">' . $image . '</div>';
                         echo '</div>';
@@ -92,11 +92,11 @@ function fahrschule_review_shortcode() {
     <?php }
     return ob_get_clean();
 }
-add_shortcode( 'show_reviews', 'fahrschule_review_shortcode' );
+add_shortcode( 'show_reviews', 'bewertungen_review_shortcode' );
 
-function fahrschule__formular_shortcode() {
+function bewertungen_formular_shortcode() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'fahrschul_bewertungen';
+    $table_name = $wpdb->prefix . 'bewertungen';
     if ( isset( $_POST['submit'] ) ) {
         $vorname   = $_POST['vorname'] ?? '';
         $key       = $_POST['key'] ?? '';
@@ -116,7 +116,7 @@ function fahrschule__formular_shortcode() {
                 )
             );
             if ( $wpdb->insert_id ) {
-                echo '<div class="mein-formular-erfolg" autofocus>Vielen Dank! Ihre Daten wurden erfolgreich gespeichert.</div>';
+                echo '<div class="mein-formular-erfolg" autofocus>Vielen Dank! Ihre Bewertung wurde erfolgreich gespeichert.</div>';
             }
         }
     }
@@ -138,23 +138,23 @@ function fahrschule__formular_shortcode() {
                 <input type="email" name="email" id="email">
             </div>
             <div class="fb-col-100">
-                <label for="nachricht">Nachricht:</label>
+                <label for="nachricht">Ihre Bewertung:</label>
                 <textarea name="nachricht" id="nachricht"></textarea>
             </div>
-            <input type="submit" name="submit" class="absenden" value="Absenden">
+            <input type="submit" name="submit" class="absenden" value="Bewertung absenden">
         </div>
     </form>
     <?php
     return ob_get_clean();
 }
-add_shortcode( 'fahrschule_review', 'fahrschule__formular_shortcode' );
+add_shortcode( 'bewertungen_formular', 'bewertungen_formular_shortcode' );
 
-function mein_formular_admin_menu() {
-    add_menu_page( 'Bewertungen', 'Bewertungen', 'manage_options', 'bewertungen', 'fahrschule' );
+function bewertungen_admin_menu() {
+    add_menu_page( 'Bewertungen', 'Bewertungen', 'manage_options', 'bewertungen', 'bewertungen_admin' );
 }
-add_action( 'admin_menu', 'mein_formular_admin_menu' );
+add_action( 'admin_menu', 'bewertungen_admin_menu' );
 
-function fahrschule() {
+function bewertungen_admin() {
     ?>
     <style>
         .widefat th {
@@ -168,14 +168,14 @@ function fahrschule() {
             border: 1px solid #eaeaea;
             padding: 0.5em;
         }
-        .fahrschule-erfolg {
+        .bewertungen-erfolg {
             margin: 1em 0;
             padding: 1em;
             background-color: #d9edf7;
             border: 1px solid #bce8f1;
             color: #31708f;
         }
-        .fahrschule-fehler {
+        .bewertungen-fehler {
             margin: 1em 0;
             padding: 1em;
             background-color: #f2dede;
@@ -200,7 +200,7 @@ function fahrschule() {
         }
     </style>
     <div class="wrap">
-        <h2>Fahrschulbewertungen</h2>
+        <h2>Bewertungen verwalten</h2>
         <?php
         // Hole und sichere GET-Parameter:
         $step         = $_GET['step'] ?? '';
@@ -211,20 +211,20 @@ function fahrschule() {
         $antwort_auf  = $_POST['antwort_auf'] ?? '';
         
         global $wpdb;
-        $table_name = $wpdb->prefix . 'fahrschul_bewertungen';
+        $table_name = $wpdb->prefix . 'bewertungen';
         $message    = ''; // Variable initialisieren
 
         // Lösch-Funktion: Wird ausgeführt, wenn im URL-Parameter action=delete gesetzt ist
         if ( 'delete' === $action && ! empty( $id ) ) {
-            if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( $_GET['_wpnonce'], 'fahrschule_delete_entry_' . $id ) ) {
+            if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( $_GET['_wpnonce'], 'bewertungen_delete_entry_' . $id ) ) {
                 $wpdb->delete( $table_name, array( 'id' => intval( $id ) ), array( '%d' ) );
-                $message = '<div class="fahrschule-erfolg">Eintrag wurde erfolgreich gelöscht.</div>';
+                $message = '<div class="bewertungen-erfolg">Bewertung wurde erfolgreich gelöscht.</div>';
             } else {
-                $message = '<div class="fahrschule-fehler">Sicherheitsüberprüfung fehlgeschlagen.</div>';
+                $message = '<div class="bewertungen-fehler">Sicherheitsüberprüfung fehlgeschlagen.</div>';
             }
         }
         
-        if ( isset( $_POST['submit'] ) && isset( $_POST['fahrschule_admin_key'] ) && wp_verify_nonce( $_POST['fahrschule_admin_key'], 'fahrschule_admin_nonce' ) ) {
+        if ( isset( $_POST['submit'] ) && isset( $_POST['bewertungen_admin_key'] ) && wp_verify_nonce( $_POST['bewertungen_admin_key'], 'bewertungen_admin_nonce' ) ) {
             $wpdb->update(
                 $table_name,
                 array(
@@ -236,7 +236,7 @@ function fahrschule() {
                 ),
                 array( 'id' => $_POST['id'] ?? 0 )
             );
-            $message = '<div class="fahrschule-erfolg">Die Einträge wurden erfolgreich aktualisiert.</div>';
+            $message = '<div class="bewertungen-erfolg">Die Bewertungen wurden erfolgreich aktualisiert.</div>';
         }
         echo $message;
         
@@ -259,7 +259,7 @@ function fahrschule() {
                     <?php foreach ( $wpdb->get_results( "SELECT * FROM $table_name" ) as $eintrag ) { ?>
                         <tr>
                             <form method="post">
-                                <input type="hidden" name="fahrschule_admin_key" value="<?php echo wp_create_nonce( 'fahrschule_admin_nonce' ); ?>">
+                                <input type="hidden" name="bewertungen_admin_key" value="<?php echo wp_create_nonce( 'bewertungen_admin_nonce' ); ?>">
                                 <input type="hidden" name="id" value="<?php echo esc_attr( $eintrag->id ); ?>">
                                 <td><?php echo esc_html( $eintrag->id ); ?></td>
                                 <td><input type="text" name="vorname" value="<?php echo esc_attr( $eintrag->vorname ); ?>"></td>
@@ -271,7 +271,7 @@ function fahrschule() {
                                 <td>
                                     <input type="submit" name="submit" class="button" value="Aktualisieren">
                                     <a href="admin.php?page=bewertungen&step=antworten&id=<?php echo esc_attr( $eintrag->id ); ?>" class="button" data-eintrag-id="<?php echo esc_attr( $eintrag->id ); ?>">Antworten</a>
-                                    <a href="<?php echo wp_nonce_url( 'admin.php?page=bewertungen&action=delete&id=' . esc_attr( $eintrag->id ), 'fahrschule_delete_entry_' . esc_attr( $eintrag->id ) ); ?>" class="button" onclick="return confirm('Möchten Sie diesen Eintrag wirklich löschen?');">Löschen</a>
+                                    <a href="<?php echo wp_nonce_url( 'admin.php?page=bewertungen&action=delete&id=' . esc_attr( $eintrag->id ), 'bewertungen_delete_entry_' . esc_attr( $eintrag->id ) ); ?>" class="button" onclick="return confirm('Möchten Sie diesen Eintrag wirklich löschen?');">Löschen</a>
                                 </td>
                             </form>
                         </tr>
@@ -385,14 +385,14 @@ function fahrschule() {
     <?php
 }
 
-function fahrschule_admin_scripts() {
-    wp_enqueue_script( 'fahrschule-admin', plugin_dir_url( __FILE__ ) . 'js/fahrschule-admin.js', array( 'jquery' ), '1.0.0', true );
+function bewertungen_admin_scripts() {
+    wp_enqueue_script( 'bewertungen-admin', plugin_dir_url( __FILE__ ) . 'bewertungen-admin.js', array( 'jquery' ), '1.0.0', true );
 }
-add_action( 'admin_enqueue_scripts', 'fahrschule_admin_scripts' );
+add_action( 'admin_enqueue_scripts', 'bewertungen_admin_scripts' );
 
-function fahrschule_antwort() {
+function bewertungen_antwort() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'fahrschul_bewertungen';
+    $table_name = $wpdb->prefix . 'bewertungen';
     $eintrag_id = $_POST['eintrag_id'] ?? 0;
     $antwort    = $_POST['antwort'] ?? '';
     $wpdb->update(
@@ -402,10 +402,10 @@ function fahrschule_antwort() {
     );
     wp_die();
 }
-add_action( 'wp_ajax_fahrschule_antwort', 'fahrschule_antwort' );
+add_action( 'wp_ajax_bewertungen_antwort', 'bewertungen_antwort' );
 
-function fahrschule_admin_init() {
-    add_action( 'wp_ajax_fahrschule_antwort', 'fahrschule_antwort' );
+function bewertungen_admin_init() {
+    add_action( 'wp_ajax_bewertungen_antwort', 'bewertungen_antwort' );
 }
-add_action( 'admin_init', 'fahrschule_admin_init' );
+add_action( 'admin_init', 'bewertungen_admin_init' );
 ?>
